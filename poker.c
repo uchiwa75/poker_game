@@ -971,7 +971,7 @@ void conbert(void)
 {
 	for (int i = 0; i < N * 4; i++) {		
 		int mod = pre_deck[i] % 4;
-		deck[i].num = pre_deck[i] % 13 + 1;
+		deck[i].num = pre_deck[i] % 52 + 1;
 		
 		if (deck[i].num == 1) {			
 			deck[i].value = 53 + mod;	
