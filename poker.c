@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -7,8 +7,8 @@
 
 #define M 20 // 初期のチップ枚数
 
-int pre_deck[52];	// ランダムな値を格納するための配列. 構造体に変換後別の配列に移す.
-					// 二人のプレイヤーに必要なカードはN * 4までなので[52]である必要はない.
+int pre_deck[N * 4];	// ランダムな値を格納するための配列. 構造体に変換後別の配列に移す.
+			// 二人のプレイヤーに必要なカードはN * 4までなので[52]である必要はない.
 
 char *suits[4] = {" クラブ  ",
                   " ダイヤ  ", 
@@ -16,23 +16,19 @@ char *suits[4] = {" クラブ  ",
                   "スペード "}; // トランプのスートをポインタの配列に格納.
 
 char *hands[10] = { "なし", "ワンペア", 
-					"ツーペア", "スリーカード", 
-					"ストレート", "フラッシュ", "フルハウス", 
-					"フォーカード", "ストレートフラッシュ", 
-					"ロイヤルストレートフラッシュ" }; // ポーカーの役も同様.
+		    "ツーペア", "スリーカード", 
+		    "ストレート", "フラッシュ", "フルハウス", 
+		    "フォーカード", "ストレートフラッシュ", 
+		    "ロイヤルストレートフラッシュ" }; // ポーカーの役も同様.
 
 typedef struct card {
-	
 	int num;
-	
 	int value;
-	
 	char* suit;
+}Card; 	// カードを番号(num)、価値(value)、スート(suit)の3つから構成される構造体とする.
+	// numが同じであってもvalueに差を持たせるのは手札のソートのため.
 
-}Card; // カードを番号(num)、価値(value)、スート(suit)の3つから構成される構造体とする.
-	   // numが同じであってもvalueに差を持たせるのは手札のソートのため.
-
-Card deck[52]; // pre_deckに格納した数字をCard型構造体に変換した後に格納するための配列.
+Card deck[N * 4]; // pre_deckに格納した数字をCard型構造体に変換した後に格納するための配列.
 Card player_hand[N * 2]; // 一旦deckに格納した後でプレイヤーとnpcに割り振る.
 Card npc_hand[N * 2];
 
@@ -96,13 +92,10 @@ int main(void)
 {	
 
 	int continue_game = 0; // ゲームを継続するかの指標を初期化.
-	
 	init();
-	
 	title();
-
-	ui();
 	
+	ui();
 	printf("カードが配られました.\n");
 	printf("ENTERキーで手札を見ます.");
 	enter();
@@ -115,19 +108,13 @@ int main(void)
 	while (continue_game == 0 && player_chips > 0) {
 
 		shuffle(); // 重複のない乱数を生成して
-		
 		conbert(); // カードに変換して
-		
 		deal(); // プレイヤーとnpcに分配する
 		
-		
 		sort(player_hand); // プレイヤーの手札を整理
-		
 		rate(player_hand, &player_rate); // プレイヤーの手札を評価
 
-		
 		sort(npc_hand); // npcの手札を整理
-		
 		rate(npc_hand, &npc_rate); // npcの手札を評価
 
 		if (npc_rate >= 6) {
@@ -135,1069 +122,732 @@ int main(void)
 		} // フルハウス以上なら勝負を降りることはない
 
 		if (games >= 4) { // プレイヤーがブラフで勝ち続けるのを防ぐ
-			
 			if (npc_fold_count > 0) {
-				
 				if (player_fold_count == 0 || (player_fold_count != 0 && npc_fold_count / player_fold_count >= 3)) {
-
 					npc_anxiety -= 5;
-
 				}
 			}
 		}
 			
-
-		
-		srand((unsigned int)time(NULL));
 		npc_tendency = rand() % 2; // npcのレイズ傾向を決定 
-		
 		
 		show_card_p = 1; // プレイヤーの手札をオープンにする
 		
 		ui();
 
-		if (first_move == 0) {          // プレイヤー先手
-    		
-    		printf("あなたの番です.\n");
-    		
-    		// ファーストベット
-    		raised_chips = 0;
-			
+		// プレイヤー先手
+		if (first_move == 0) {
+
+			printf("あなたの番です.\n");
+
+			// ファーストベット
+			raised_chips = 0;
+
 			printf("初めにベットするチップの枚数を決めてください.(1 ～ 5) : ");
-			
+
 			char buf[100];
-			
 			int temp = 0;
-    		
 			while (raised_chips <= 0 || raised_chips > 5) {
-    		    
-        		
+
 				fgets(buf, sizeof(buf), stdin);
-				
 				sscanf(buf, "%d", &temp);
-        		
+
 				if (temp >= 1 && temp <= 5 && temp <= player_chips) {
-        		    
 					raised_chips = temp;
-				
-				}
-				else if (temp >= 1 && temp <= 5 && temp > player_chips) {
-					
+				} else if (temp >= 1 && temp <= 5 && temp > player_chips) {
 					printf("チップが足りません. 入力しなおしてください. : ");
-				}
-				else {
-					
+				} else {
 					printf(" 1 ～ 5 の数字を入力してください. : ");
-				
 				}
-    		
 			}
-    		
+
 			if (raised_chips <= 2) {
-    		    
 				npc_anxiety -= 2;
-
-    		} else if (raised_chips == 5) {
-    		    
+			} else if (raised_chips == 5) {
 				npc_anxiety += 1;
+			} // プレイヤーのベット額によって不安度を変化させる
 
-    		} // プレイヤーのベット額によって不安度を変化させる
-    		
 			player_chips -= raised_chips;   // 所持枚数を減らす
-    		
 			player_bet += raised_chips;        // プレイヤーの賭け枚数を増やす
-			
+
 			ui();
-    		
 			printf(" %d 枚ベットしました.", raised_chips);
 			enter();
-    		
-    		
-    		// 相手のベット
-    		ui();
-			
+
+
+			// 相手のベット
+			ui();
 			printf("相手の番です.");
 			enter();
-			
+
 			if (player_bet >= 4) {
-			    
-			    if (npc_rate == 0 && npc_hand[0].value < 41) {
-			        
-			        ui();
-			        
-			        npc_fold_count++;
+				if (npc_rate == 0 && npc_hand[0].value < 41) {
+					ui();
+					npc_fold_count++;
+					player_chips++;
 
-    				player_chips++;
-    
-    
-    				printf("相手は勝負を降りました.\n");
-    				printf("チップを %d 枚獲得します.", 1);
-    				enter();
-        		    
-        			//show_card_n = 1; // 動作確認用
-    				//ui();
-    				//printf("デバッグのため相手の手札を表示しています");
-    				//enter();
-    
-        		    goto game_end;
-        		    
-			    }
+					printf("相手は勝負を降りました.\n");
+					printf("チップを %d 枚獲得します.", 1);
+					enter();
+
+					//show_card_n = 1; // 動作確認用
+					//ui();
+					//printf("デバッグのため相手の手札を表示しています");
+					//enter();
+
+					goto game_end;
+				}
 			} // プレイヤーのベットが4枚以上でnpcがハイカード J 未満ならチップを 1 枚支払って降りる
-			
-    		
-    		npc_bet = player_bet;
-    		
+
+
+			npc_bet = player_bet;
+
 			raised_chips = 0;
-    		
-			if (npc_tendency == 1 && npc_rate >= 2) {
-    		    
+
+			if (npc_tendency == 1 && npc_rate >= 2) {  
 				raised_chips = 2;
-
-    		} else if (npc_tendency == 0 && npc_rate >= 3) {
-    		    
+			} else if (npc_tendency == 0 && npc_rate >= 3) {    
 				raised_chips = 2;
-
-    		} else if (npc_tendency == 1 && (npc_rate >= 1 || npc_hand[0].value >= 49)) { //value>=49 は K 以上
-    		    
+			} else if (npc_tendency == 1 && (npc_rate >= 1 || npc_hand[0].value >= 49)) { //value>=49 は K 以上    
 				raised_chips = 1;
-
-    		} else if (npc_tendency == 0 && npc_rate >= 2) {
-    		    
+			} else if (npc_tendency == 0 && npc_rate >= 2) {    
 				raised_chips = 1;
+			} // 何枚レイズするかの判断
 
-    		} // 何枚レイズするかの判断
-			
 			while (raised_chips > player_chips) {
-				
 				raised_chips--;
-			
 			} // レイズがプレイヤーのチップ数を超えないように
-    		
+
 			npc_bet += raised_chips;
-			
+
 			ui();
-			
+
 			if (raised_chips == 2 || raised_chips == 1) {
-    		    
 				printf("相手はベットを受け入れ, さらに %d 枚レイズしました.", raised_chips);
 				enter();
-
-    		} else {
-    		    
+			} else {   		    
 				printf("コールしました.");
 				enter();
+			}
 
-    		}
-			
 			ui();
 
 			if (raised_chips > 0) {
-
 				printf("コールしますか ? (y/n) : ");
-    		    
+
 				do {
-
 					fgets(yn, sizeof(yn), stdin);
-
 					if (strcmp(yn, "n\n") == 0) {
 
 						ui();
-
 						printf("勝負を降りました.\n");
-
 						player_fold_count++;
-
 						printf(" %d 枚のチップを失いました.", player_bet);
 						enter();
 
 						goto game_end;
 
-					}
-					else if (strcmp(yn, "y\n") == 0) {
+					} else if (strcmp(yn, "y\n") == 0) {
 
 						player_chips -= raised_chips;
-
 						player_bet += raised_chips;
 
 						ui();
-
 						printf("ベットを %d 枚増やしました.", raised_chips);
 						enter();
 
-					}
-					else {
-
+					} else {
 						printf("y/n で入力してください.");
-
 					}
 
 				} while (strcmp(yn, "y\n") *  strcmp(yn, "n\n") != 0);
-				
-    		}
-    		
+
+			}
+
 			ui();
 
-            player_exchange(); // 一度だけカードを交換する
-
+			player_exchange(); // 一度だけカードを交換する
 			sort(player_hand); // カード整理
-
 			rate(player_hand, &player_rate); // 評価
 
-			
+
 			if (include_number == 0) {
-                
 				npc_anxiety += 3;
-
-            } else if (include_number == 1) {
-                
+			} else if (include_number == 1) {
 				npc_anxiety += 1;
-
-            } else if (include_number >= 4) {
-                
+			} else if (include_number >= 4) {
 				npc_anxiety -= 5;
-
-            } // プレイヤーの交換枚数で不安度を変化させる
+			} // プレイヤーの交換枚数で不安度を変化させる
 
 			if (include_number > 0) {
-
 				ui();
-				
 				printf(" %d 枚交換しました.", include_number);
 				enter();
-
 			}
 
 
-			npc_exchange();	// npcも一度だけカードを交換する
-			
-			sort(npc_hand);
-			
+			npc_exchange();	// npcも一度だけカードを交換する		
+			sort(npc_hand);		
 			rate(npc_hand, &npc_rate);
-			
-			if (npc_rate >= 6) {
-				
+
+			if (npc_rate >= 6) {			
 				npc_anxiety -= 20;
-			
 			} // フルハウス以上なら勝負を降りることはない
-    		           
+
 			ui();
-
 			printf("相手の番です.\n");
-			if (npc_exchange_count == 0) {
 
+			if (npc_exchange_count == 0) {
 				printf("相手はカードを交換しませんでした.");
 				enter();
-
-			}
-			else if (npc_exchange_count > 0) {
-
+			} else if (npc_exchange_count > 0) {
 				printf("カードを %d 枚交換しました.", npc_exchange_count);
 				enter();
-
 			}
-    		
-		    
-    		
-		    // カード交換後ベット
-		    // プレイヤーのベット
-		    raised_chips = 0;
+
+			// カード交換後ベット
+			// プレイヤーのベット
+			raised_chips = 0;
 
 			ui();
-
-		    printf("あなたの番です.\n");
+			printf("あなたの番です.\n");
 
 			if (player_chips == 0) {
-
 				printf("レイズできないのでチェックします.");
 				enter();
-
-			}
-			else if (player_chips > 0) {
-
+			} else if (player_chips > 0) {
 				printf("チェックなら 0 を, レイズなら上乗せする枚数を入力してください.(0 ～ 2) : ");
 
 				temp = 10; // うまく書き換わらなければ下のwhile文へ入る
-
 				fgets(buf, sizeof(buf), stdin);
-
 				sscanf(buf, "%d", &temp);
-
 				while (temp > player_chips || (temp < 0 || temp > 2)) {
-
 					if (temp > player_chips && temp >= 0 && temp <= 2) {
-
 						printf("チップが足りません. 入力しなおしてください. : ");
-
-					}
-					else if (temp < 0 || temp > 2) {
-
+					} else if (temp < 0 || temp > 2) {
 						printf(" 0 ～ 2 の数字を入力してください. : ");
-
 					}
 
 					fgets(buf, sizeof(buf), stdin);
-
 					sscanf(buf, "%d", &temp);
-
 				}
 
 				raised_chips = temp;
 
 				if (raised_chips == 0) {
-
 					ui();
-
 					printf("チェックしました.");
 					enter();
 
-				}
-				else if (raised_chips > 0) {
+				} else if (raised_chips > 0) {
 
 					player_chips -= raised_chips; // 所持枚数を減らす
 					player_bet += raised_chips; // プレイヤーの賭け枚数を増やす
 
 					ui();
-
 					printf(" %d 枚レイズしました.", raised_chips);
 					enter();
 
 				}
 			}
-			
-		    
-		    // 相手のベット
 
+
+			// 相手のベット
 			ui();
 
 			//printf("(デバッグ用ここでの不安度を表示します:%d)\n", npc_anxiety);
 
-    		printf("相手の番です.");
+			printf("相手の番です.");
 			enter();
-    		
+
 			npc_decision();
-    		
-    		if (npc_fold == 1) { // 勝負を降りる場合
-    		    
+
+			if (npc_fold == 1) { // 勝負を降りる場合
+
 				ui();
 
 				npc_fold_count++;
 
 				player_chips += player_bet + npc_bet;
 
-
 				printf("相手は勝負を降りました.\n");
 				printf("チップを %d 枚獲得します.", npc_bet);
 				enter();
-    		    
-    			//show_card_n = 1; // 動作確認用
+
+				//show_card_n = 1; // 動作確認用
 				//ui();
 				//printf("デバッグのため相手の手札を表示しています");
 				//enter();
 
-    		    goto game_end;
+				goto game_end;
 
-    		} else if (npc_fold == 0) { // 勝負を受ける場合
-    		    
+			} else if (npc_fold == 0) { // 勝負を受ける場合
+
 				npc_bet += raised_chips; // いったん相手のベットをプレイヤーにそろえて
-    		    
-    		    if (raised_chips == 0) { // プレイヤーがチェックした場合
-    		        
+
+				if (raised_chips == 0) { // プレイヤーがチェックした場合
+
 					if (npc_tendency == 1) { // npc側のレイズ額を決めていく
-    		            
 						if (npc_rate >= 1) {
-    		                
 							raised_chips = 2;
-    		            
 						} else {
-    		                
 							raised_chips = 0;
-    		           
 						}
-    		        
 					} else if (npc_tendency == 0) {
-    		            
 						if (npc_rate >= 2) {
-    		                
 							raised_chips = 2;
-    		            
 						} else if (npc_rate == 1) {
-    		                
 							raised_chips = 1;
-    		            
 						}
-    		        
 					} 
-					
+
 					while (raised_chips > player_chips) {
-						
 						raised_chips--;
-					
 					} // プレイヤーのチップ数を超えないように
 
 					npc_bet += raised_chips;  // npcのベット額を増やす
-    		        
+
 					if (raised_chips >= 1) {
-
 						ui();
-
 						printf("相手は %d 枚レイズしました.", raised_chips);
 						enter();
-    		        
 					} else {
-    		           
 						ui();
-
 						printf("相手もチェックしました.");
 						enter();
-    		        
 					}
-    		   
-    		    } else if (raised_chips >= 1) { // プレイヤーがレイズした場合
-    		    
+
+				} else if (raised_chips >= 1) { // プレイヤーがレイズした場合
+
 					raised_chips = 0; // プレイヤーのレイズ分をリセット
-    		        
+
 					if (npc_tendency == 1) {
-    		            
 						if (npc_rate >= 3) {
-    		                
 							raised_chips = 2;
-    		            
 						} else if (npc_rate == 2) {
-    		                
 							raised_chips = 1;
-    		            }
-    		        } else if (npc_tendency == 0) {
-    		            
+						}
+					} else if (npc_tendency == 0) {
 						if (npc_rate >= 4) {
-    		                
 							raised_chips = 2;
-    		            
 						} else if (npc_rate == 3) {
-    		                
 							raised_chips = 1;
-    		            
 						} // レイズの傾向と手の強さによっていくらレイズするか決める
-    		        
 					}
-					
+
 					while (raised_chips > player_chips) {  // プレイヤーのチップ数を超えないように
-						
 						raised_chips--;
-
 					}
+
 					npc_bet += raised_chips; // npcがレイズした分
-    		        
+
 					if (raised_chips >= 1) {
-
 						ui();
-
 						printf("相手はレイズを受け入れ, さらに %d 枚レイズしました.", raised_chips);
 						enter();
-
-    		        } else {
-    		            
-    		            ui();
-    		           
+					} else {
+						ui();
 						printf("相手はコールしました.");
 						enter();
+					}
+				 }
+			}
 
-    		        }
-    		    }
-    		}
-    		
 			if (raised_chips > 0) {
-			    
-			    ui();
 
+				ui();
 				printf("コールしますか ? (y/n) : ");
 
 				do {
-
 					fgets(yn, sizeof(yn), stdin);
-
 					if (strcmp(yn, "n\n") == 0) {
-
 						ui();
-
 						printf("勝負を降りました.\n");
-
 						player_fold_count++;
-
 						printf(" %d 枚のチップを失いました.", player_bet);
 						enter();
 
 						goto game_end;
 
-					}
-					else if (strcmp(yn, "y\n") == 0) {
+					} else if (strcmp(yn, "y\n") == 0) {
 
 						player_chips -= raised_chips;
-
 						player_bet += raised_chips;
 
 						ui();
-
 						printf("ベットを %d 枚増やしました.", raised_chips);
 						enter();
 
-					}
-					else {
-
+					} else {
 						printf("y/n で入力してください.");
-
 					}
-
 				} while (strcmp(yn, "y\n") *  strcmp(yn, "n\n") != 0);
 
 			}
 	
-    	} 
-    	
-
-		else if (first_move == 1) { // npc先手
+    		} else if (first_move == 1) { // npc先手
 
 			printf("オープンしました.");
 			enter();
     		
 			char buf[100];
-
 			int temp = 0;
-
-    		srand((unsigned int)time(NULL));
-    		temp = rand() % 10 + 1;
+			temp = rand() % 10 + 1;
     		
-			if (npc_rate >= 2) {            //  最初のベット枚数をカードの強さと乱数を用いて決定する
-    		
-				if (temp >= 9 && temp <= 10) {
-    		        
-					raised_chips = 5;
-    		    
+			if (npc_rate >= 2) { //  最初のベット枚数をカードの強さと乱数を用いて決定する
+    				if (temp >= 9 && temp <= 10) {
+    		        		raised_chips = 5;
 				} else if (temp >= 5 && temp <= 8) {
-
-    		        raised_chips = 4;
-
-    		    } else if (temp >= 1 && temp <= 4) {
-
-    		        raised_chips = 3;
-
-    		    } 
-
-    		} else if (npc_rate == 1) {
-
-    		    if (temp == 10) {
-
-    		        raised_chips = 5;
-
-				}
-				else if (temp == 9) {
-
 					raised_chips = 4;
-
-				}
-				else if (temp >= 5 && temp <= 8) {
-
-    		        raised_chips = 3;
-
-    		    } else if (temp >= 1 && temp <= 4) {
-
-    		        raised_chips = 2;
-
-    		    } 
-
-    		} else {
-    		    
+    		    		} else if (temp >= 1 && temp <= 4) {
+    		     			raised_chips = 3;
+    		    		} 
+    			} else if (npc_rate == 1) {
+    		    		if (temp == 10) {
+    		        		raised_chips = 5;
+				} else if (temp == 9) {
+					raised_chips = 4;
+				} else if (temp >= 5 && temp <= 8) {
+    		        		raised_chips = 3;
+    		   		 } else if (temp >= 1 && temp <= 4) {
+    		        		raised_chips = 2;
+    		    		} 
+    			} else {
 				if (npc_hand[1].value >= 45) { // 2番目に強いカードが Q 以上
-
-    		        raised_chips = 3;
-
-    		    } else {
-
-    		        raised_chips = 2;
-
-    		    } 
-    		    
-    		}
+					 raised_chips = 3;
+				} else {
+    		        		raised_chips = 2;
+    		    		} 
+    			}
 			
 			while (raised_chips > player_chips) {
-				
 				raised_chips--;
-
 			} // プレイヤーのチップ数を超えないように
 			
 
-    		npc_bet += raised_chips;
+    			npc_bet += raised_chips;
     		
 			ui();
-
 			printf("相手の番です.\n");
 			printf(" %d 枚ベットしました.", raised_chips);
 			enter();
 
 			ui();
-    		
-    		printf("コールしますか ?\n");
-    		printf("('n'を選ぶとチップを 1 枚払って勝負を終えます) (y/n) : ");
+			printf("コールしますか ?\n");
+			printf("('n'を選ぶとチップを 1 枚払って勝負を終えます) (y/n) : ");
 
 			do {
-
 				fgets(yn, sizeof(yn), stdin);
-
 				if (strcmp(yn, "n\n") == 0) {
 
 					ui();
-
 					printf("勝負を降りました.\n");
-
 					player_fold_count++;
-
 					printf(" %d 枚のチップを失いました.", 1);
 					enter();
 
 					goto game_end;
-
-				}
-				else if (strcmp(yn, "y\n") == 0) { // 勝負を受けてさらに上乗せするかどうか
-
+				} else if (strcmp(yn, "y\n") == 0) { // 勝負を受けてさらに上乗せするかどうか
+					
 					player_chips -= raised_chips;
-
 					player_bet += raised_chips;
 
-
 					if (player_chips == 0) { // チップが足りないのでコールまで
-
+						
 						ui();
-
 						printf("コールしました.");
 						enter();
-
-					}
-					else if (player_chips > 0) {
-
+						
+					} else if (player_chips > 0) {
+						
 						ui();
-
 						printf("さらにレイズすることもできます.\n");
 						printf("このままなら 0 を, レイズなら上乗せする枚数を入力してください.(0 ～ 2) : ");
 
 						temp = 10;  // うまく書き換わらなければ下のwhile文へ入る
-
 						fgets(buf, sizeof(buf), stdin);
-
 						sscanf(buf, "%d", &temp);
 
 						while (temp > player_chips || (temp < 0 || temp > 2)) {
-
 							if (temp > player_chips && temp >= 0 && temp <= 2) {
-
 								printf("チップが足りません. 入力しなおしてください. : ");
-
 							}
 							else if (temp < 0 || temp > 2) {
-
 								printf(" 0 ～ 2 の数字を入力してください. : ");
-
 							}
 
 							fgets(buf, sizeof(buf), stdin);
-
 							sscanf(buf, "%d", &temp);
-
 						}
 
 						raised_chips = temp;
 
 						if (raised_chips == 0) {
-
 							ui();
-
 							printf("コールしました.");
 							enter();
-
 						}
 						else if (raised_chips > 0) {
 
 							player_chips -= raised_chips;   // 所持枚数を減らす
-							
-							player_bet += raised_chips;        // プレイヤーの賭け枚数を増やす
+							player_bet += raised_chips;     // プレイヤーの賭け枚数を増やす
 
 							ui();
-
 							printf(" %d 枚レイズしました.", raised_chips);
 							enter();
-
+							
 						}
 					}
-
-				}
-				else {
-
+				} else {
 					printf("y/n で入力してください.");
-
 				}
 
 			} while (strcmp(yn, "y\n") *  strcmp(yn, "n\n") != 0);
 			
-			
 			if (raised_chips == 2) {
-			    
-			    if (npc_rate == 0 && npc_hand[0].value < 41) {
+				if (npc_rate == 0 && npc_hand[0].value < 41) {
 			        
-			        ui();
-			        
-			        npc_fold_count++;
+					ui();
 
-    				player_chips += player_bet + npc_bet;
-    
-    
-    				printf("相手は勝負を降りました.\n");
-    				printf("チップを %d 枚獲得します.", npc_bet);
-    				enter();
-        		    
-        			//show_card_n = 1; // 動作確認用
-    				//ui();
-    				//printf("デバッグのため相手の手札を表示しています");
-    				//enter();
-    
-        		    goto game_end;
-        		    
-			    }
+					npc_fold_count++;
+					player_chips += player_bet + npc_bet;
+
+					printf("相手は勝負を降りました.\n");
+					printf("チップを %d 枚獲得します.", npc_bet);
+					enter();
+
+					//show_card_n = 1; // 動作確認用
+					//ui();
+					//printf("デバッグのため相手の手札を表示しています");
+					//enter();
+
+					goto game_end;
+			    	}
 			} // npcが J 未満のハイカードでプレイヤーが 2 枚レイズしたとき降りる
 			
 		
 		
 			if (npc_rate == 0 && npc_hand[0].value < 45) {
-
 				npc_anxiety += raised_chips;
-
 			} // npcがQ未満のハイカードならプレイヤーの上乗せ分不安にする
-
 			
 			if (raised_chips > 0) {
-
 				npc_bet += raised_chips;
 
 				ui();
-
 				printf("相手はコールしました.");
 				enter();
-				
 			}
 
 			npc_exchange();
-			
 			sort(npc_hand);
-			
 			rate(npc_hand, &npc_rate);
 
 			if (npc_rate >= 6) {
-				
 				npc_anxiety -= 20;
-			
 			} // フルハウス以上なら勝負を降りることはない
 
 			ui();
-
 			printf("相手の番です.\n");
+			
 			if (npc_exchange_count == 0) {
-
 				printf("相手はカードを交換しませんでした.");
 				enter();
-
-			}
-			else if (npc_exchange_count > 0) {
-
+			} else if (npc_exchange_count > 0) {
 				printf("カードを %d 枚交換しました.", npc_exchange_count);
 				enter();
-
 			}
     		
 			ui();
             
 			player_exchange(); // 一度だけカードを交換する
-
 			sort(player_hand); // カード整理
-
 			rate(player_hand, &player_rate); // 評価
 
-
 			if (include_number == 0) {
-
 				npc_anxiety += 3;
-
 			} else if (include_number == 1) {
-
 				npc_anxiety += 1;
-
 			} else if (include_number >= 4) {
-
 				npc_anxiety -= 5;
-
 			} // プレイヤーの交換枚数で不安度を変化させる
 
 			if (include_number > 0) {
-
 				ui();
-
 				printf(" %d 枚交換しました.", include_number);
 				enter();
-
 			}
     		
 			// ここから交換後のベット
 			
 			raised_chips = 0; // リセット
 
-			srand((unsigned int)time(NULL));
 			int dice = rand() % 10 + 1;
 			
 			if (npc_tendency == 1) { // 強気の場合
-				
 				if ((dice <= 8) && ((npc_anxiety < 3 && npc_rate == 2) || npc_rate >= 3)) {
-
 					raised_chips = 2;
-
-				}
-				else if ((dice <= 1) && npc_rate >= 1) { // ブラフ
-
+				} else if ((dice <= 1) && npc_rate >= 1) { // ブラフ
 					raised_chips = 2;
-
-				}
-				else if ((npc_anxiety < 3 && npc_rate >= 1) || (npc_anxiety >= 3 && npc_rate >= 2)) {
-
+				} else if ((npc_anxiety < 3 && npc_rate >= 1) || (npc_anxiety >= 3 && npc_rate >= 2)) {
 					raised_chips = 1;
-
 				}
-			}
-			else if (npc_tendency == 0) { // 弱気の場合
-
+			} else if (npc_tendency == 0) { // 弱気の場合
 				if ((dice <= 8) && ((npc_anxiety < 3 && npc_rate == 4) || npc_rate >= 5)) {
-
 					raised_chips = 2;
-
-				}
-				else if ((npc_anxiety < 3 && npc_rate >= 2) || (npc_anxiety >= 3 && npc_rate >= 3)) {
-
+				} else if ((npc_anxiety < 3 && npc_rate >= 2) || (npc_anxiety >= 3 && npc_rate >= 3)) {
 					raised_chips = 1;
-
 				}
 			}
+			
 			while (raised_chips > player_chips) {
-
 				raised_chips--;
-
 			} // プレイヤーのチップ数を超えないように
 
 			npc_bet += raised_chips;
 
 			ui();
-
 			printf("相手の番です.\n");
 
 			if (raised_chips > 0) {
-
 				printf(" %d 枚レイズしました.", raised_chips);
 				enter();
-
-			}
-			else if (raised_chips == 0){
-
+			} else if (raised_chips == 0){
 				printf("チェックしました.");
 				enter();
-
 			}
 			
 			ui();
-
 			printf("あなたの番です.\n");
 			
 			if (raised_chips > 0) {
-
+				
 				printf("コールしますか ? (y/n) : ");
-
+				
 				do {
-
 					fgets(yn, sizeof(yn), stdin);
 
 					if (strcmp(yn, "n\n") == 0) {
 
 						ui();
-
 						printf("勝負を降りました.\n");
-
 						player_fold_count++;
-
 						printf(" %d 枚のチップを失いました.", player_bet);
 						enter();
 
 						goto game_end;
-
-					}
-					else if (strcmp(yn, "y\n") == 0) { // 勝負を受けてさらに上乗せするかどうか
+						
+					} else if (strcmp(yn, "y\n") == 0) { // 勝負を受けてさらに上乗せするかどうか
 
 						player_chips -= raised_chips;
-
 						player_bet += raised_chips;
 
-
 						if (player_chips == 0) { // チップが足りないのでコールまで
-
 							ui();
-
 							printf("コールしました.");
 							enter();
-
-						}
-						else if (player_chips > 0) {
+						} else if (player_chips > 0) {
 
 							ui();
-
 							printf("さらにレイズすることもできます.\n");
 							printf("このままなら 0 を, レイズなら上乗せする枚数を入力してください.(0 ～ 2) : ");
 
 							temp = 10;  // うまく書き換わらなければ下のwhile文へ入る
-
 							fgets(buf, sizeof(buf), stdin);
-
 							sscanf(buf, "%d", &temp);
 
 							while (temp > player_chips || (temp < 0 || temp > 2)) {
-
 								if (temp > player_chips && temp >= 0 && temp <= 2) {
-
 									printf("チップが足りません. 入力しなおしてください. : ");
-
-								}
-								else if (temp < 0 || temp > 2) {
-
+								} else if (temp < 0 || temp > 2) {
 									printf(" 0 ～ 2 の数字を入力してください. : ");
-
 								}
 
 								fgets(buf, sizeof(buf), stdin);
-
 								sscanf(buf, "%d", &temp);
-
 							}
 
 							raised_chips = temp;
 
 							if (raised_chips == 0) {
-
 								ui();
-
 								printf("コールしました.");
 								enter();
-
-							}
-							else if (raised_chips > 0) {
+							} else if (raised_chips > 0) {
 
 								player_chips -= raised_chips; // 所持枚数を減らす
-
 								player_bet += raised_chips; // プレイヤーの賭け枚数を増やす
 
 								ui();
-
 								printf(" %d 枚レイズしました.", raised_chips);
 								enter();
-
 							}
 						}
-
-					}
-					else {
-
+					} else {
 						printf("y/n で入力してください.");
-
 					}
-
+					
 				} while (strcmp(yn, "y\n") *  strcmp(yn, "n\n") != 0);
 
-			}
-			else if (raised_chips == 0) { // 相手がチェックのとき
+			} else if (raised_chips == 0) { // 相手がチェックのとき
 
 				if (player_chips == 0) {
-
 					printf("レイズできないのでチェックします.");
 					enter();
-
-				}
-				else if (player_chips > 0) {
+				} else if (player_chips > 0) {
 
 					printf("チェックなら 0 を, レイズなら上乗せする枚数を入力してください.(0 ～ 2) : ");
 
 					temp = 10;  // うまく書き換わらなければ下のwhile文へ入る
-
 					fgets(buf, sizeof(buf), stdin);
-
 					sscanf(buf, "%d", &temp);
 
 					while (temp > player_chips || (temp < 0 || temp > 2)) {
-
 						if (temp > player_chips && temp >= 0 && temp <= 2) {
-
 							printf("チップが足りません. 入力しなおしてください. : ");
-
-						}
-						else if (temp < 0 || temp > 2) {
-
+						} else if (temp < 0 || temp > 2) {
 							printf(" 0 ～ 2 の数字を入力してください. : ");
-
 						}
 
 						fgets(buf, sizeof(buf), stdin);
-
 						sscanf(buf, "%d", &temp);
-
 					}
 
 					raised_chips = temp;
 
 					if (raised_chips == 0) {
-
 						ui();
-
 						printf("チェックしました.");
 						enter();
-
-					}
-					else if (raised_chips > 0) {
-
+					} else if (raised_chips > 0) {
 						player_chips -= raised_chips; // 所持枚数を減らす
-
 						player_bet += raised_chips; // プレイヤーの賭け枚数を増やす
 
 						ui();
-
 						printf(" %d 枚レイズしました.", raised_chips);
 						enter();
-
 					}
 				}	
 			}
 
-			if ((raised_chips == 2 || (raised_chips == 1 && player_chips == 0)) && npc_rate < 2) {
-				
-				npc_anxiety += 1;
-				
+			if ((raised_chips == 2 || (raised_chips == 1 && player_chips == 0)) && npc_rate < 2) {	
+				npc_anxiety += 1;	
 			} // プレイヤーの強気のレイズで不安になる. 勝負を降りる割合が多ければここ消すかも
 			
 			if (raised_chips > 0) { // プレイヤーがレイズした場合npcがコールするか決める
-
 				ui();
-
-    			printf("相手の番です.");
+    				printf("相手の番です.");
 				//printf("\n(デバッグのためここでの不安度を表示します:%d)", npc_anxiety);
 				enter();
         		
-        		npc_decision();
+        			npc_decision();
         		
-    			if (npc_fold == 1) { // 勝負を降りる場合
+    				if (npc_fold == 1) { // 勝負を降りる場合
 
 					ui();
 
 					npc_fold_count++;
-
 					player_chips += player_bet + npc_bet;
-
 
 					printf("相手は勝負を降りました.\n");
 					printf("チップを %d 枚獲得します.", npc_bet);
@@ -1210,81 +860,59 @@ int main(void)
 
 					goto game_end;
 
-        		} else {
-
+        			} else {
 					npc_bet += raised_chips;
-
 					ui();
-
-        		    printf("コールしました.");
+					printf("コールしました.");
 					enter();
         		    
-        		}
+        			}
 			}
-    	}
+    		}
 		
 		show_down(); // 相手のカードをオープンして手札を比べる
 		
 		judge(); // 勝敗を決定する
 
-        game_end: // 勝負を降りた時のgoto先
+        	game_end: // 勝負を降りた時のgoto先
         
         
-        if (player_chips <= 0) {
+        	if (player_chips <= 0) {
 			
 			ui();
-            
 			printf("チップがなくなりました...\n\n");
-            printf("GAME OVER");
+           		printf("GAME OVER");
 			enter();
 
-        } else {
-    		
+		} else {
 			printf("\n\t次のゲームに進みますか ? (y/n) : ");  	// ゲームを続けるか聞く
 			
-    		
 			do {
-
 				fgets(yn, sizeof(yn), stdin);
 
 				if (strcmp(yn, "n\n") == 0) {
-
 					continue_game = 1;
-
-				}
-				else if (strcmp(yn, "y\n") == 0) {
-
+				} else if (strcmp(yn, "y\n") == 0) {
 					games++;
-				    
-				    init();
+				    	init();
 
 					ui();
-
 					printf("新しいカードを配りました.\n");
 					printf("ENTERキーで手札を見ます.");
 					enter();
 					
 					if (first_move == 0) {  // 先手後手を入れ替える
-
 					    first_move = 1;
-
 					} else {
-
 					    first_move = 0;
-
 					}
 
-				}
-				else {
-
+				} else {
 					printf("y/n で入力してください.");
-
 				}
 
 			} while (strcmp(yn, "y\n") *  strcmp(yn, "n\n") != 0);
-
-        }
-        
+        	}
 	}
 
 	init();
@@ -1303,50 +931,37 @@ int main(void)
 
 ///// title ///// タイトル画面とNOTICE.
 void title(void) {
-	printf("\n\t<< POKER >>\n\n");
+	printf("\n << POKER >>\n\n");
 	printf(" ** NOTICE **\n");
 	printf("数字や y/n の入力が求められない限り, ENTERキーで先に進みます.\n");
 	printf("所持チップが 0 枚の状態で勝負が終わるとGAME OVERとなります.\n");
 	printf("所持チップがなくならない限り, 勝負はいつまでも続けることができます.(相手のチップに制限はありません)\n");
 	printf("勝負の途中で所持チップが 0 枚になってもその勝負は継続できます.(ただし自分も相手もレイズはできません)");
-	enter();
-	printf("\n\n\n\nゲームを始めます.");
+	printf("\n\n\n\n Press ENTER to Start");
 	enter();
 }
 
 ///// shuffle ///// 1から52の間で重複の無いように乱数を生成してpre_deck[]に格納する.
 void shuffle(void) 
 {
-	srand((unsigned int)time(NULL));
-	
 	int m = rand() % 13 + 1;
-	
 	pre_deck[0] = m;
-	
 	int i = 1;
 	
-	while (i < N * 4) {
+	while (i < N * 4) {	
+		int index = 1;	
+		m = rand() % 52 + 1;	
 		
-		int index = 1;
-		
-		m = rand() % 52 + 1;
-		
-		for (int j = 0; j < i; j++) {
-			
-			if (m == pre_deck[j]) {
-				
-				index *= 0;
-				
+		for (int j = 0; j < i; j++) {	
+			if (m == pre_deck[j]) {	
+				index *= 0;	
 				break;
-			
 			}
 		}
+		
 		if (index == 1) {
-			
 			pre_deck[i] = m;
-			
 			i++;
-			
 		}
 	}
 }
@@ -1354,21 +969,14 @@ void shuffle(void)
 //// conbert /////// pre_deck[]に格納した乱数をCard型構造体に変換して, deck[]に格納する.
 void conbert(void)
 {
-	for (int i = 0; i < N * 4; i++) {
-		
+	for (int i = 0; i < N * 4; i++) {		
 		int mod = pre_deck[i] % 4;
-
 		deck[i].num = pre_deck[i] % 13 + 1;
 		
-		if (deck[i].num == 1) {
-			
-			deck[i].value = 53 + mod;
-		
-		}
-		else {
-			
-			deck[i].value = (deck[i].num - 1) * 4 + mod + 1;
-			
+		if (deck[i].num == 1) {			
+			deck[i].value = 53 + mod;	
+		} else {	
+			deck[i].value = (deck[i].num - 1) * 4 + mod + 1;	
 		}
 
 		deck[i].suit = suits[mod];
@@ -1381,16 +989,11 @@ void deal(void)
 {
 	int j = 0;
 	
-	for (int i = 0; i < N * 2; i++) {
-	    
-		player_hand[i] = deck[j];
-		
-		j++;
-		
-		npc_hand[i] = deck[j];
-		
-		j++;
-		
+	for (int i = 0; i < N * 2; i++) {    
+		player_hand[i] = deck[j];		
+		j++;	
+		npc_hand[i] = deck[j];	
+		j++;	
 	}
 }
 
@@ -1399,18 +1002,12 @@ void show_card(Card x[], Card y[])
 {
 	printf("\n\n\n\t<<あなたの手札>>         <<相手の手札>>\n");
 	
-	if (show_card_p == 0 && show_card_n == 0) {
-	    
-		for (int i = 0; i < N; i++) {
-		    
-			printf("\t[***********]:%d          [***********]\n", i + 1);
-			
+	if (show_card_p == 0 && show_card_n == 0) {    
+		for (int i = 0; i < N; i++) {	    
+			printf("\t[***********]:%d          [***********]\n", i + 1);		
 		}
-	}
-	else if (show_card_p == 1 && show_card_n == 0) {
-	    
+	} else if (show_card_p == 1 && show_card_n == 0) {
 		for (int i = 0; i < N; i++) {
-		    
 			if (x[i].num == 1) {
 				printf("\t[%s A]:%d          [***********]\n", x[i].suit, i + 1);
 			}
@@ -1427,15 +1024,10 @@ void show_card(Card x[], Card y[])
 				printf("\t[%s%2d]:%d          [***********]\n", x[i].suit, x[i].num, i + 1);
 			}
 		}
-	}
-	else if (show_card_p == 1 && show_card_n == 1) {
-	    
-		for (int i = 0; i < N; i++) {
-		    
-			if (x[i].num == 1) {
-			    
-				printf("\t[%s A]:%d          ", x[i].suit, i + 1);
-				
+	} else if (show_card_p == 1 && show_card_n == 1) {	    
+		for (int i = 0; i < N; i++) {		    
+			if (x[i].num == 1) {			    
+				printf("\t[%s A]:%d          ", x[i].suit, i + 1);				
 				if (y[i].num == 1) {
 					printf("[%s A]\n", y[i].suit);
 				}
@@ -1451,8 +1043,7 @@ void show_card(Card x[], Card y[])
 				else {
 					printf("[%s%2d]\n", y[i].suit, y[i].num);
 				}
-			}
-			else if (x[i].num == 13) {
+			} else if (x[i].num == 13) {
 				printf("\t[%s K]:%d          ", x[i].suit, i + 1);
 				if (y[i].num == 1) {
 					printf("[%s A]\n", y[i].suit);
@@ -1469,8 +1060,7 @@ void show_card(Card x[], Card y[])
 				else {
 					printf("[%s%2d]\n", y[i].suit, y[i].num);
 				}
-			}
-			else if (x[i].num == 12) {
+			} else if (x[i].num == 12) {
 				printf("\t[%s Q]:%d          ", x[i].suit, i + 1);
 				if (y[i].num == 1) {
 					printf("[%s A]\n", y[i].suit);
@@ -1487,8 +1077,7 @@ void show_card(Card x[], Card y[])
 				else {
 					printf("[%s%2d]\n", y[i].suit, y[i].num);
 				}
-			}
-			else if (x[i].num == 11) {
+			} else if (x[i].num == 11) {
 				printf("\t[%s J]:%d          ", x[i].suit, i + 1);
 				if (y[i].num == 1) {
 					printf("[%s A]\n", y[i].suit);
@@ -1505,8 +1094,7 @@ void show_card(Card x[], Card y[])
 				else {
 					printf("[%s%2d]\n", y[i].suit, y[i].num);
 				}
-			}
-			else {
+			} else {
 				printf("\t[%s%2d]:%d          ", x[i].suit, x[i].num, i + 1);
 				if (y[i].num == 1) {
 					printf("[%s A]\n", y[i].suit);
@@ -1532,26 +1120,17 @@ void show_card(Card x[], Card y[])
 void show_hand(int x, int y)
 {
 	if (show_card_p == 0) {
-
 		printf("\t(役 : ??)\n\n\n");
 	}
 	else if (show_card_p == 1 && show_card_n == 0) {
-
 		printf("\t(役 : %s)\n\n\n", hands[x]);
-
 	} else if (show_card_p == 1 && show_card_n == 1) {
-
-	    printf("\t(役 : %s)", hands[x]);
-
-	    int length = strlen(hands[x]);
-
-	    for (int i = 0; i < 17 - length; i++) {
-
-	        printf(" ");
-
-	    }
-
-	    printf(" (役 : %s)\n\n\n", hands[y]);
+	    	printf("\t(役 : %s)", hands[x]);
+	    	int length = strlen(hands[x]);
+	    	for (int i = 0; i < 17 - length; i++) {
+	        	printf(" ");
+	    	}
+	    	printf(" (役 : %s)\n\n\n", hands[y]);
 	}
 }
 
@@ -1559,26 +1138,22 @@ void show_hand(int x, int y)
 void player_exchange(void)
 {
 	int exclude_number = 0;
-
 	include_number = 0;
 
-    printf("あなたの番です.\n");
-    printf("カードを交換しますか ? (y/n) : ");
+	printf("あなたの番です.\n");
+	printf("カードを交換しますか ? (y/n) : ");
 
 	do {
-
 		fgets(yn, sizeof(yn), stdin);
 
 		if (strcmp(yn, "n\n") == 0) {
-
-			ui();
 			
+			ui();	
 			printf("では手札はそのままです.");
 			enter();
 			
 			return;
-		}
-		else if (strcmp(yn, "y\n") == 0) {
+		} else if (strcmp(yn, "y\n") == 0) {
 
 			ui();
 			
@@ -1590,50 +1165,31 @@ void player_exchange(void)
 			fgets(ex, sizeof(ex), stdin);
 			
 			int len = strlen(ex);
-
 			int ex_index; // 入力した数字に重複がないかを調べるための指標
 
-			for (int i = 0; i < len; i++) {
-				
+			for (int i = 0; i < len; i++) {				
 				if (ex[i] >= 49 && ex[i] <= 53) { // 1 ～ 5 の数字 であるか
-
 					ex_index = 1;
-
 					int j = 0;
-
-					while (j < i)
-					{
-
+					while (j < i) {
 						ex_index *= (ex[i] - ex[j]);
-
 						j++;
-
 					}
 
 					if (ex_index != 0) {
-
 						exclude_number = ex[i] - 48;
-
 						player_hand[exclude_number - 1] = player_hand[N + include_number];
-
 						include_number++;
-					
 					}
 				}
 			}
 			if (include_number == 0) {
-
 			    printf("番号が確認できませんでした. 交換せずに進みます.");
 			    enter();
-
 			}
-		}
-		else {
-			
+		} else {	
 			printf("y/n で入力してください. : ");
-
 		}
-
 	} while (strcmp(yn, "y\n") *  strcmp(yn, "n\n") != 0);
 
 }
@@ -1821,17 +1377,11 @@ void npc_exchange(void)
 void sort(Card x[])
 {
     for (int i = 0; i < N; i++) {
-
         for (int j = 0; j < N - 1; j++) {
-
             if (x[j].value < x[j + 1].value) {
-
                 Card temp = x[j];
-
                 x[j] = x[j + 1];
-
                 x[j + 1] = temp;
-
             }
         }
     }
@@ -1944,8 +1494,7 @@ void rate(Card x[], int *y)
 void show_down(void)
 {
 	ui();
-
-    printf("それでは勝負です.");
+	printf("それでは勝負です.");
 	enter();
 
 	show_card_n = 1;
@@ -1953,35 +1502,22 @@ void show_down(void)
 	ui();
 	
 	if (player_rate == 0) {
-
-			printf("あなたの手札に役は成立しませんでした.\n");
-
+		printf("あなたの手札に役は成立しませんでした.\n");
 	} else {
-
-			printf("あなたの役は '%s' です.\n", hands[player_rate]);
-
+		printf("あなたの役は '%s' です.\n", hands[player_rate]);
 	}
+	
 	if (player_rate == npc_rate) {
-
 		if (npc_rate == 0) {
-
-		printf("相手の手札にも役は成立しませんでした.\n");
-
+			printf("相手の手札にも役は成立しませんでした.\n");
 		} else {
-
-		printf("相手の役も '%s' です.\n", hands[npc_rate]);
-
+			printf("相手の役も '%s' です.\n", hands[npc_rate]);
 		}
 	} else {
-
 		if (npc_rate == 0) {
-
 			printf("相手の手札に役は成立しませんでした.\n");
-
 		} else {
-
 			printf("相手の役は '%s' です.\n", hands[npc_rate]);
-
 		}
 	}
 
@@ -1996,7 +1532,6 @@ void judge(void)
 		enter();
 
 		ui();
-            
 		printf("\t勝ちました !!\n");
 		printf("\n\t%d 枚のチップを獲得します.", npc_bet);
 		enter();
@@ -2005,31 +1540,28 @@ void judge(void)
 		
 		player_chips += player_bet + npc_bet;
 		
-	}
-	else if (player_rate < npc_rate) {
+	} else if (player_rate < npc_rate) {
 
 		enter();
 
 		ui();
-
 		printf("\t負けました...\n");
 		printf("\n\t%d 枚のチップを失いました.", player_bet);
 		enter();
 		
 		lose_count++;
 
-	}
-	else {
+	} else {
 		
 		compare();
-		if (judgement == 0) {
-		    printf("しかしあなたのカードが上でした."); 
+		
+	    	if (judgement == 0) {
+		    	printf("しかしあなたのカードが上でした."); 
 			enter();
-
+			
 			ui();
-
-		    printf("\t勝ちました !!\n");
-		    printf("\n\t%d 枚のチップを獲得します.", npc_bet);
+			printf("\t勝ちました !!\n");
+			printf("\n\t%d 枚のチップを獲得します.", npc_bet);
 			enter();
 			
 			win_count++;
@@ -2037,13 +1569,12 @@ void judge(void)
 			player_chips += player_bet + npc_bet;
 
 		} else if (judgement == 1) {
-		    printf("しかし相手のカードが上でした.");
+			printf("しかし相手のカードが上でした.");
 			enter();
-
+			
 			ui();
-
-		    printf("\t負けました...\n");
-		    printf("\n\t%d 枚のチップを失いました.", player_bet);
+			printf("\t負けました...\n");
+			printf("\n\t%d 枚のチップを失いました.", player_bet);
 			enter();
 
 			lose_count++;
@@ -2053,15 +1584,13 @@ void judge(void)
 			enter();
 			
 			ui();
-
-    		printf("\t引き分け\n");
-    		printf("\n\t賭けたチップが戻ってきます.");
+			printf("\t引き分け\n");
+			printf("\n\t賭けたチップが戻ってきます.");
 			enter();
     		
 			chop_count++;
     		
 			player_chips += player_bet;
-
 		}
 	}
 	
@@ -2070,7 +1599,6 @@ void judge(void)
 	npc_bet = 0;
 	
 	ui();
-
 	printf("\tあなたのチップ : %d 枚\n", player_chips);
 	printf("\t(%d 勝 / %d 敗 / %d 分\n", win_count, lose_count, chop_count);
 	printf("\t勝負を降りた回数 : あなた  %d 回 / 相手  %d 回)", player_fold_count, npc_fold_count);
@@ -2277,62 +1805,62 @@ void compare(void)
         }
     }
     // Straight同士または Straight Flash同士の比較
-    if (player_rate == 4 || player_rate == 8) { // A,5,4,3,2 の場合 A が最弱の 1 として扱われるため基本的に2番目に強いカードで比較してゆく
-        if (player_hand[1].num == 5 && npc_hand[1].num == 5) {  //2番目が 5 の場合のみ特殊なので取り上げる
-            if (player_hand[0].num > npc_hand[0].num) {  // この場合に限って A より 6 のほうが強い
-                judgement = 0;                          //  judgement = 2 で初期化しているため引き分けの場合はわざわざ取り上げない
-                return;
-            } else if (player_hand[0].num < npc_hand[0].num) {
-                judgement = 1;
-                return;
-            }
-        } else if (player_hand[1].num > npc_hand[1].num) {
-            judgement = 0;
-            return;
-        } else if (player_hand[1].num < npc_hand[1].num) {
-            judgement = 1;
-            return;
-        }
-    }
+    	if (player_rate == 4 || player_rate == 8) { // A,5,4,3,2 の場合 A が最弱の 1 として扱われるため基本的に2番目に強いカードで比較してゆく
+        	if (player_hand[1].num == 5 && npc_hand[1].num == 5) {  //2番目が 5 の場合のみ特殊なので取り上げる
+            		if (player_hand[0].num > npc_hand[0].num) {  // この場合に限って A より 6 のほうが強い
+               			judgement = 0;                          //  judgement = 2 で初期化しているため引き分けの場合はわざわざ取り上げない
+                		return;
+            		} else if (player_hand[0].num < npc_hand[0].num) {
+                		judgement = 1;
+                		return;
+           		 }
+       		 } else if (player_hand[1].num > npc_hand[1].num) {
+           		judgement = 0;
+            		return;
+        	} else if (player_hand[1].num < npc_hand[1].num) {
+            		judgement = 1;
+            		return;
+        	}
+    	}
     
     // Flash同士の比較は High Card同士の比較と同様なので統合済み
     
     // Full House同士の比較
-    if (player_rate == 6) {
-        for (int a = 0; a < N; a++) {
-            for (int b = 0; b < N; b++) {
-                for (int c = 0; c < N; c++) {
-                    if (player_hand[a].num == player_hand[b].num && a != b) {
-                        if (player_hand[b].num == player_hand[c].num && b != c) {
-                            if (player_hand[c].num == player_hand[a].num && c != a) {
-                                player_pair_number1 = player_hand[a].num;  // 2枚組を避けて3枚組の数字をとる
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        for (int a = 0; a < N; a++) {
-            for (int b = 0; b < N; b++) {
-                for (int c = 0; c < N; c++) {
-                    if (npc_hand[a].num == npc_hand[b].num && a != b) {
-                        if (npc_hand[b].num == npc_hand[c].num && b != c) {
-                            if (npc_hand[c].num == npc_hand[a].num && c != a) {
-                                 npc_pair_number1 = npc_hand[a].num;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (player_pair_number1 > npc_pair_number1) {
-            judgement = 0;
-            return;
-        } else if (player_pair_number1 < npc_pair_number1) {
-            judgement = 1;
-            return;
-        }
-    }
+	if (player_rate == 6) {
+        	for (int a = 0; a < N; a++) {
+            		for (int b = 0; b < N; b++) {
+                		for (int c = 0; c < N; c++) {
+                    			if (player_hand[a].num == player_hand[b].num && a != b) {
+                        			if (player_hand[b].num == player_hand[c].num && b != c) {
+                            				if (player_hand[c].num == player_hand[a].num && c != a) {
+                                				player_pair_number1 = player_hand[a].num;  // 2枚組を避けて3枚組の数字をとる
+                            				}
+                        			}
+                   			 }
+                		}
+            		}
+        	}
+        	for (int a = 0; a < N; a++) {
+           		 for (int b = 0; b < N; b++) {
+                		for (int c = 0; c < N; c++) {
+                    			if (npc_hand[a].num == npc_hand[b].num && a != b) {
+                        			if (npc_hand[b].num == npc_hand[c].num && b != c) {
+                           				 if (npc_hand[c].num == npc_hand[a].num && c != a) {
+                                				 npc_pair_number1 = npc_hand[a].num;
+                            				}
+                        			}
+                    			}
+               			 }
+            		}
+        	}
+       		 if (player_pair_number1 > npc_pair_number1) {
+            		judgement = 0;
+           		 return;
+        	} else if (player_pair_number1 < npc_pair_number1) {
+           		judgement = 1;
+            		return;
+        	}
+	}
     
     // Four of a Kind同士の比較は Three of a Kind同士の比較と同様なので統合済み
     
@@ -2347,28 +1875,20 @@ void bet_situation(void)
 	printf("GAME %d\n", games + 1);
 	//printf("不安度 : %d\n", npc_anxiety); // デバッグ用
 	printf("あなたのチップ : %d枚\n", player_chips);
-    printf("あなたのベット : %d枚 / 相手のベット : %d枚", player_bet, npc_bet);
+    	printf("あなたのベット : %d枚 / 相手のベット : %d枚", player_bet, npc_bet);
 }
 
 ///// fold_or_not ///// npcが勝負を降りるかどうかを決定する. 引数は npc_anxiety = 0 の時何割の確率で勝負を受けるか.
 int fold_or_not(int x)
 {
-    int fold = 0;
-
-    srand((unsigned int)time(NULL));
-
-    fold = rand() % 10 + 1 + npc_anxiety;
-
-    if (fold <= x) {
-
-        return 0;  // 勝負を受ける
-
-    } else {
-
-        return 1;  // 勝負を降りる
-
-    }
-    
+	int fold = 0;
+	fold = rand() % 10 + 1 + npc_anxiety;
+	
+	if (fold <= x) {
+        	return 0;  // 勝負を受ける
+    	} else {
+        	return 1;  // 勝負を降りる
+    	}
 }
 
 ///// npc_decision ///// npcが下りるかどうかの最終的な判断.
@@ -2422,11 +1942,11 @@ void npc_decision(void)
 ///// init /////新しいゲームを始めるときに 0 であるべき変数をリセットする.
 void init(void)
 {
-    npc_bet = 0;
-    player_bet = 0;
-    raised_chips = 0;
-    npc_fold = 0;
-    npc_anxiety = 0;
+	npc_bet = 0;
+	player_bet = 0;
+	raised_chips = 0;
+	npc_fold = 0;
+	npc_anxiety = 0;
 	show_card_p = 0;
 	show_card_n = 0;
 }
