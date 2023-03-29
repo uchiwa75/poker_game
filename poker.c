@@ -944,7 +944,7 @@ void title(void) {
 ///// shuffle ///// 1から52の間で重複の無いように乱数を生成してpre_deck[]に格納する.
 void shuffle(void) 
 {
-	int m = rand() % 13 + 1;
+	int m = rand() % 52 + 1;
 	pre_deck[0] = m;
 	int i = 1;
 	
@@ -971,7 +971,7 @@ void conbert(void)
 {
 	for (int i = 0; i < N * 4; i++) {		
 		int mod = pre_deck[i] % 4;
-		deck[i].num = pre_deck[i] % 52 + 1;
+		deck[i].num = pre_deck[i] % 13 + 1;
 		
 		if (deck[i].num == 1) {			
 			deck[i].value = 53 + mod;	
