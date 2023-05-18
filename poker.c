@@ -659,7 +659,7 @@ void judge(Result_count* result_count,
 }
 
 ///// compare ///// 役が同じ場合にさらに手札を詳細に比較する.
-int compare(const Strength strength, const Card player_card[], const Card opponent_card[])
+Judgement compare(const Strength strength, const Card player_card[], const Card opponent_card[])
 {
 	// High Card同士または Flash同士の比較
 	if (strength == HIGH_CARD || strength == FLASH) {
