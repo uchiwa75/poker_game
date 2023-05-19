@@ -279,7 +279,7 @@ void show_hand(const Show_card_status show_card_status, const Hand_strength hand
 
 		printf("\t(役 : %s)", hands[hand_strength.player]);
 
-		int length = strlen(hands[hand_strength.player]);
+		size_t length = strlen(hands[hand_strength.player]);
 
 		for (int i = 0; i < 17 - length; i++) {
 
@@ -349,7 +349,7 @@ void show_down(const Result_count result_count,
 
 ///// shuffle_and_deal /////
 void shuffle_and_deal(int pre_deck[],
-	const char* suits[],
+	char* suits[],
 	Hand_strength* hand_strength,
 	Card deck[],
 	Card player_card[],
@@ -400,7 +400,7 @@ void shuffle(int pre_deck[]) {
 }
 
 ///// convert ///// pre_deck[]に格納した乱数をCard型構造体に変換して, deck[]に格納する.
-void convert(const int pre_deck[], const char* suits[], Card deck[])
+void convert(const int pre_deck[], char* suits[], Card deck[])
 {
 	for (int i = 0; i < CARD_NUM * 4; i++) {
 
@@ -1513,7 +1513,7 @@ int player_exchange(const Result_count result_count,
 
 			fgets(ex, sizeof(ex), stdin);
 
-			int len = strlen(ex);
+			size_t len = strlen(ex);
 
 			int ex_index; // 入力した数字に重複がないかを調べるための指標
 
