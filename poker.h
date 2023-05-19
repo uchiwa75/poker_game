@@ -125,13 +125,13 @@ void show_down(const Result_count result_count,
 	const Card opponent_card[]);
 	// カードの生成,分配
 void shuffle_and_deal(int pre_deck[],
-	const char* suits[],
+	char* suits[],
 	Hand_strength* hand_strength,
 	Card deck[],
 	Card player_card[],
 	Card opponent_card[]);
 void shuffle(int x[]);
-void convert(const int pre_deck[], const char* suits[], Card deck[]);
+void convert(const int pre_deck[], char* suits[], Card deck[]);
 void deal(const Card deck[], Card player[], Card opponent[]);
 void sort(Card x[]);
 	// 役と勝敗の評価
