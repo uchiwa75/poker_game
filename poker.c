@@ -279,7 +279,7 @@ void show_hand(const Show_card_status show_card_status, const Hand_strength hand
 
 		printf("\t(役 : %s)", hands[hand_strength.player]);
 
-		size_t length = strlen(hands[hand_strength.player]);
+		int length = (int)strlen(hands[hand_strength.player]);
 
 		for (int i = 0; i < 17 - length; i++) {
 
@@ -1513,7 +1513,7 @@ int player_exchange(const Result_count result_count,
 
 			fgets(ex, sizeof(ex), stdin);
 
-			size_t len = strlen(ex);
+			int len = (int)strlen(ex);
 
 			int ex_index; // 入力した数字に重複がないかを調べるための指標
 
